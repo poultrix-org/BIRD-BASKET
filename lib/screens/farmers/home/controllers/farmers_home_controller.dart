@@ -1,7 +1,7 @@
 // controllers/farmers_home_controller.dart
 import 'package:get/get.dart';
 
-import '../../../authentications/models/user_models.dart';
+import '../../../authentications/role_selections/models/user_models.dart';
 
 class FarmersHomeController extends GetxController {
   late UserModel user;

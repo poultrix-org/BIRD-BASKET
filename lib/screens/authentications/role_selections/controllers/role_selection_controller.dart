@@ -5,7 +5,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 
 
-import '../setup_account/views/setup_account_common_view.dart';
+import '../../setup_account/views/setup_account_common_view.dart';
 
 class RoleSelectionController extends GetxController {
   final List<String> roles = [

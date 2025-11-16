@@ -6,7 +6,7 @@ import '../../../chicks/home/views/chicks_delivery_home_view.dart';
 import '../../../company/home/views/company_home_view.dart';
 import '../../../farmers/home/views/farmers_home_view.dart';
 import '../../../vetnarians/home/views/vet_home_view.dart';
-import '../../models/user_models.dart';
+import '../../role_selections/models/user_models.dart';
 
 
 class SetupAccountController extends GetxController {

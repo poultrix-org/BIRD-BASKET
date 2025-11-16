@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../views/role_selection_view.dart';
+import '../../role_selections/views/role_selection_view.dart';
 
 class SplashController extends GetxController {
   final PageController pageController = PageController();
