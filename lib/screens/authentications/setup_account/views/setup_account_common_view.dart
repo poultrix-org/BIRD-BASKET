@@ -8,13 +8,14 @@ import '../controllers/setup_account_controller.dart';
 class SetupAccountCommonView extends StatelessWidget {
   final SetupAccountController controller = Get.put(SetupAccountController());
 
-  SetupAccountCommonView({super.key});
+  // --- FIX: Added 'key' and corrected 'super.key' ---
+  SetupAccountCommonView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Setup ${controller.role} Account'),
+        title: Text('Create ${controller.role} Account'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -28,14 +29,20 @@ class SetupAccountCommonView extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 24),
+
+              // --- NEW: Auth Fields ---
+              _buildAuthFields(context), // <-- ADDED
+
               // --- DYNAMIC FORM ---
               _buildDynamicForm(context),
+
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: controller.saveProfile,
-                  child: const Text('Save & Continue'),
+                  // Changed text to reflect action
+                  child: const Text('Create Account & Continue'),
                 ),
               ),
             ],
@@ -45,8 +52,63 @@ class SetupAccountCommonView extends StatelessWidget {
     );
   }
 
-  // --- WIDGET BUILDERS based on ROLE ---
-  // This is the core logic for the dynamic view
+// --- NEW WIDGET: Auth Fields ---
+  Widget _buildAuthFields(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Account Login Details',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: controller.emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            prefixIcon: Icon(Icons.email),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty || !value.contains('@')) {
+              return 'Please enter a valid email';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: controller.passwordController,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Password',
+            prefixIcon: Icon(Icons.lock),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty || value.length < 6) {
+              return 'Password must be at least 6 characters';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        const Divider(),
+        const SizedBox(height: 16),
+        Text(
+          '${controller.role} Profile Details',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+// --- WIDGET BUILDERS based on ROLE ---
+// This is the core logic for the dynamic view
   Widget _buildDynamicForm(BuildContext context) {
     switch (controller.role) {
       case 'Farmer':
@@ -57,6 +119,8 @@ class SetupAccountCommonView extends StatelessWidget {
         return _buildCompanyForm(context);
       case 'Chicks Delivery':
         return _buildChicksDeliveryForm(context);
+      case 'Meat Shop':
+        return _buildMeatShopForm(context);
       default:
         return const Text('Error: Unknown Role');
     }
@@ -79,7 +143,7 @@ class SetupAccountCommonView extends StatelessWidget {
         _buildDropdown(
           hint: 'Type of Hens',
           icon: Icons.egg,
-          observableValue: controller.selectedHenType, // <-- FIXED
+          observableValue: controller.selectedHenType,
           items: controller.henTypeOptions,
           onChanged: (val) {
             controller.selectedHenType.value = val;
@@ -109,7 +173,7 @@ class SetupAccountCommonView extends StatelessWidget {
         _buildDropdown(
           hint: 'Specialization',
           icon: Icons.science,
-          observableValue: controller.selectedSpecialization, // <-- FIXED
+          observableValue: controller.selectedSpecialization,
           items: controller.vetSpecializationOptions,
           onChanged: (val) {
             controller.selectedSpecialization.value = val;
@@ -139,7 +203,7 @@ class SetupAccountCommonView extends StatelessWidget {
         _buildDropdown(
           hint: 'Supply Type',
           icon: Icons.category,
-          observableValue: controller.selectedCompanySupplyType, // <-- FIXED
+          observableValue: controller.selectedCompanySupplyType,
           items: controller.companySupplyTypeOptions,
           onChanged: (val) {
             controller.selectedCompanySupplyType.value = val;
@@ -166,7 +230,7 @@ class SetupAccountCommonView extends StatelessWidget {
         _buildDropdown(
           hint: 'Vehicle Type',
           icon: Icons.local_shipping,
-          observableValue: controller.selectedVehicleType, // <-- FIXED
+          observableValue: controller.selectedVehicleType,
           items: controller.vehicleTypeOptions,
           onChanged: (val) {
             controller.selectedVehicleType.value = val;
@@ -188,7 +252,34 @@ class SetupAccountCommonView extends StatelessWidget {
     );
   }
 
-  // --- COMMON HELPER WIDGETS ---
+  Widget _buildMeatShopForm(BuildContext context) {
+    return Column(
+      children: [
+        _buildTextField(
+            controller.shopNameController, 'Shop Name', Icons.storefront),
+        _buildTextField(controller.phoneController, 'Phone Number', Icons.phone,
+            keyboardType: TextInputType.phone),
+        _buildTextField(
+            controller.shopAddressController, 'Shop Address', Icons.location_on),
+        _buildTextField(controller.deliveryRadiusController,
+            'Delivery Radius (km)', Icons.map,
+            keyboardType: TextInputType.number),
+        _buildUploadButton(
+          'Upload Shop Proof',
+              () => controller.uploadProof('Shop Proof'),
+        ),
+        _buildUploadButton(
+          'Upload ID Proof',
+              () => controller.uploadProof('ID Proof'),
+        ),
+      ],
+    );
+  }
+
+
+// --- COMMON HELPER WIDGETS ---
+// (These are all unchanged)
+
   Widget _buildTextField(
       TextEditingController controller,
       String label,
@@ -217,16 +308,15 @@ class SetupAccountCommonView extends StatelessWidget {
   Widget _buildDropdown({
     required String hint,
     required IconData icon,
-    required RxnString observableValue, // <-- FIXED: Pass observable
+    required RxnString observableValue,
     required List<String> items,
     required void Function(String?)? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Obx(
-        // This Obx now correctly observes the passed observableValue
             () => DropdownButtonFormField<String>(
-          value: observableValue.value, // <-- FIXED: Read .value inside Obx
+          value: observableValue.value,
           decoration: InputDecoration(
             labelText: hint,
             prefixIcon: Icon(icon),

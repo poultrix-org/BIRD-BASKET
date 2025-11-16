@@ -1,10 +1,8 @@
 // controllers/role_selection_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 
-
+import '../../auths/views/login_view.dart';
 import '../../setup_account/views/setup_account_common_view.dart';
 
 class RoleSelectionController extends GetxController {
@@ -12,20 +10,26 @@ class RoleSelectionController extends GetxController {
     'Farmer',
     'Veterinarian',
     'Company',
-    // 'Feed Supplier', // Removed
     'Chicks Delivery',
+    'Meat Shop',
   ];
 
   final List<IconData> roleIcons = [
     Icons.agriculture,
     Icons.medical_services,
     Icons.business,
-    // Icons.shopping_bag, // Removed
     Icons.delivery_dining,
+    Icons.storefront,
   ];
 
   void selectRole(String role) {
-    // Navigate to the common setup screen, passing the selected role
+    // Navigate to the setup screen, passing the selected role
     Get.to(() => SetupAccountCommonView(), arguments: role);
+  }
+
+  // --- NEW: Added this method back ---
+  void navigateToLogin() {
+    // Navigate to the LoginView
+    Get.offAll(() => LoginView());
   }
 }

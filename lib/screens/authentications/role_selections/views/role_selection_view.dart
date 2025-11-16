@@ -14,29 +14,63 @@ class RoleSelectionView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Your Role'),
+        // No auto back button, this is the start of the sign up flow
         automaticallyImplyLeading: false,
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1,
+      body: Column( // <-- 1. Wrapped in Column
+        children: [
+          Expanded( // <-- 2. GridView is in Expanded
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1,
+                ),
+                itemCount: controller.roles.length,
+                itemBuilder: (context, index) {
+                  final role = controller.roles[index];
+                  final icon = controller.roleIcons[index];
+                  return RoleCard(
+                    icon: icon,
+                    role: role,
+                    onTap: () => controller.selectRole(role),
+                  );
+                },
+              ),
+            ),
           ),
-          itemCount: controller.roles.length,
-          itemBuilder: (context, index) {
-            final role = controller.roles[index];
-            final icon = controller.roleIcons[index];
-            return RoleCard(
-              icon: icon,
-              role: role,
-              onTap: () => controller.selectRole(role),
-            );
-          },
-        ),
+
+          // --- 3. NEW: Sign In Button Section ---
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0)
+                .copyWith(bottom: 24.0, top: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Already have an account?',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                ),
+                TextButton(
+                  onPressed: controller.navigateToLogin,
+                  child: Text(
+                    'Sign In',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown[700],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // --- End New Button Section ---
+        ],
       ),
     );
   }
