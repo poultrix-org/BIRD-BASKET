@@ -1,18 +1,25 @@
 // controllers/splash_controller.dart
 import 'dart:async';
-import '../../../farmers/home/views/farmers_home_view.dart';
-import '../../../vetnarians/home/views/vet_home_view.dart';
-import '../../auths/views/login_view.dart';
-import '../../role_selections/views/role_selection_view.dart';
-
-import 'package:birdbasket/screens/company/home/views/company_home_view.dart';
-import 'package:birdbasket/screens/chicks/home/views/chicks_delivery_home_view.dart';
-// import 'package:birdbasket/screens/meat_shop/home/views/meat_shop_home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// Import Home Views
+import '../../../farmers/home/views/farmers_home_view.dart';
+import '../../../vetnarians/home/views/vet_home_view.dart';
+import '../../../company/home/views/company_home_view.dart';
+import '../../../chicks/home/views/chicks_delivery_home_view.dart';
+// import '../../../meat_shop/home/views/meat_shop_home_view.dart';
+
+import '../../auths/views/login_view.dart';
+import '../../role_selections/views/role_selection_view.dart';
+import '../../role_selections/models/user_models.dart';
+
 class SplashController extends GetxController {
+  // --- 1. STATIC FLAG FOR REGISTRATION ---
+  // This flag tells the controller: "Don't kick the user out, we are currently building their profile"
+  static bool isRegistering = false;
+
   final PageController pageController = PageController();
   var currentPage = 0.obs;
   final supabase = Supabase.instance.client;
@@ -23,27 +30,23 @@ class SplashController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Listen to all auth changes
-    _authSubscription =
-        supabase.auth.onAuthStateChange.listen((AuthState data) {
-          final event = data.event;
-          final session = data.session;
+    // Listen to auth state changes
+    _authSubscription = supabase.auth.onAuthStateChange.listen((AuthState data) {
+      final event = data.event;
+      final session = data.session;
 
-          if (event == AuthChangeEvent.initialSession) {
-            // App has just started
-            if (session != null) {
-              _checkAndRedirect(session.user);
-            } else {
-              // User is logged out, let splash animation continue
-            }
-          } else if (event == AuthChangeEvent.signedIn) {
-            // User has just logged in (Email, Google, etc.)
-            _checkAndRedirect(session!.user);
-          } else if (event == AuthChangeEvent.signedOut) {
-            // User has just logged out
-            Get.offAll(() => LoginView());
-          }
-        });
+      // If we are in the middle of a registration (SetupAccount), IGNORE auth events.
+      // The SetupAccountController will handle navigation manually.
+      if (isRegistering) return;
+
+      if (event == AuthChangeEvent.initialSession || event == AuthChangeEvent.signedIn) {
+        if (session != null) {
+          _checkAndRedirect(session.user);
+        }
+      } else if (event == AuthChangeEvent.signedOut) {
+        Get.offAll(() => LoginView());
+      }
+    });
   }
 
   @override
@@ -53,72 +56,107 @@ class SplashController extends GetxController {
     super.onClose();
   }
 
-  /// Checks for a profile and redirects.
-  /// This is the core logic for routing a logged-in user.
   Future<void> _checkAndRedirect(User user) async {
     try {
-      final profile = await supabase
+      // Check if the profile exists in the database
+      final data = await supabase
           .from('profiles')
-          .select('role')
+          .select()
           .eq('id', user.id)
           .maybeSingle();
 
-      if (profile != null && profile.isNotEmpty) {
-        // --- Profile EXISTS ---
-        // User is a returning user, send to their home screen
-        final String role = profile['role'];
-        _navigateToHome(role);
+      if (data != null && data.isNotEmpty) {
+        // --- A. PROFILE FOUND (Valid User) ---
+        // Map data to model (prevents crash)
+        UserModel userModel = _mapDataToModel(data, user);
+        _navigateToHome(userModel.role, userModel);
       } else {
-        // --- NO Profile ---
-        // User signed up (e.g. with Google) but never finished setup.
-        // Send them to role selection to create their profile.
-        Get.offAll(() => RoleSelectionView());
+        // --- B. PROFILE MISSING (Unauthorized "Sign Up" Attempt) ---
+        // The user tried to login (e.g., via Google) but has no account.
+        // We strictly BLOCK this and force them to Sign Up manually.
+
+        await supabase.auth.signOut(); // <--- LOG THEM OUT IMMEDIATELY
+
+        Get.offAll(() => LoginView());
+        Get.snackbar(
+          'Account Not Found',
+          'You do not have an account. Please use the "Sign Up" button to create one.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } catch (e) {
-      // On error, send to login
+      // Safety net: Log out if error
+      await supabase.auth.signOut();
       Get.offAll(() => LoginView());
     }
   }
 
-  /// Navigates to the correct home screen based on role.
-  void _navigateToHome(String role) {
+  // --- Helper: Map JSON to UserModel ---
+  UserModel _mapDataToModel(Map<String, dynamic> data, User authUser) {
+    return UserModel(
+      userId: authUser.id,
+      email: authUser.email,
+      phone: authUser.phone,
+      createdAt: DateTime.tryParse(data['created_at'] ?? ''),
+      role: data['role'] ?? '',
+      fullName: data['full_name'],
+      address: data['address'],
+      idProofPath: data['id_proof_path'],
+      farmAddress: data['farm_address'],
+      farmGpsLat: data['farm_gps_lat'],
+      farmGpsLong: data['farm_gps_long'],
+      landSize: data['land_size'],
+      numberOfHens: data['number_of_hens'],
+      typeOfHens: data['type_of_hens'],
+      farmProofPath: data['farm_proof_path'],
+      clinicName: data['clinic_name'],
+      experience: data['experience'],
+      specialization: data['specialization'],
+      companyName: data['company_name'],
+      ownerName: data['owner_name'],
+      companyAddress: data['company_address'],
+      supplyType: data['supply_type'],
+      deliveryRadius: data['delivery_radius'],
+      businessProofPath: data['business_proof_path'],
+      vehicleType: data['vehicle_type'],
+      shopName: data['shop_name'],
+      shopAddress: data['shop_address'],
+      shopProofPath: data['shop_proof_path'],
+    );
+  }
+
+  void _navigateToHome(String role, UserModel userModel) {
     switch (role) {
       case 'Farmer':
-        Get.offAll(() => FarmersHomeView());
+        Get.offAll(() => FarmersHomeView(), arguments: userModel);
         break;
       case 'Veterinarian':
-        Get.offAll(() => VetHomeView());
+        Get.offAll(() => VetHomeView(), arguments: userModel);
         break;
       case 'Company':
-        Get.offAll(() => CompanyHomeView());
+        Get.offAll(() => CompanyHomeView(), arguments: userModel);
         break;
       case 'Chicks Delivery':
-        Get.offAll(() => ChicksDeliveryHomeView());
+        Get.offAll(() => ChicksDeliveryHomeView(), arguments: userModel);
         break;
       case 'Meat Shop':
-      // Get.offAll(() => MeatShopHomeView());
-        break; // Add MeatShopHomeView when created
+        Get.snackbar("Welcome", "Meat Shop Dashboard coming soon");
+        break;
       default:
-      // Fallback
         Get.offAll(() => LoginView());
     }
   }
 
-  // --- Lottie Animation PageView Logic ---
-  void onPageChanged(int index) {
-    currentPage.value = index;
-  }
+  void onPageChanged(int index) => currentPage.value = index;
 
-  /// Called when "Get Started" is pressed.
   void nextPage() {
     if (currentPage.value == 2) {
-      // Last page, navigate to Login View
       Get.off(() => LoginView());
     } else {
-      pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeIn,
-      );
+      pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
     }
   }
 }

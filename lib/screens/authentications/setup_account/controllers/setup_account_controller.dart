@@ -1,14 +1,19 @@
 // controllers/setup_account_controller.dart
+import 'dart:io'; // Required for File operations
+import 'package:file_picker/file_picker.dart'; // Required for picking files
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 // Import all your home views
 import '../../../farmers/home/views/farmers_home_view.dart';
+import '../../../meetshop/home/views/meat_shop_home_view.dart';
 import '../../../vetnarians/home/views/vet_home_view.dart';
 import '../../../company/home/views/company_home_view.dart';
 import '../../../chicks/home/views/chicks_delivery_home_view.dart';
+
 import '../../role_selections/models/user_models.dart';
-// import '../../../meat_shop/home/views/meat_shop_home_view.dart';
+import '../../splashscreens/controllers/splash_controller.dart';
 
 class SetupAccountController extends GetxController {
   late String role;
@@ -45,6 +50,13 @@ class SetupAccountController extends GetxController {
   final shopNameController = TextEditingController();
   final shopAddressController = TextEditingController();
 
+  // --- FILE PATH VARIABLES ---
+  // We store the local path here temporarily until we upload to Supabase
+  String? uploadedIdProofPath;
+  String? uploadedFarmProofPath;
+  String? uploadedBusinessProofPath;
+  String? uploadedShopProofPath;
+
   @override
   void onInit() {
     super.onInit();
@@ -52,16 +64,75 @@ class SetupAccountController extends GetxController {
   }
 
   void pickLocation() {
+    // Hardcoded for now
     farmGpsLatController.text = '11.0168';
     farmGpsLongController.text = '76.9558';
   }
 
-  void uploadProof(String proofType) {
-    Get.snackbar('File Uploaded', 'Dummy $proofType.pdf uploaded.');
+  /// 1. Pick a file from the device
+  Future<void> uploadProof(String proofType) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'png', 'pdf'],
+      );
+
+      if (result == null) return; // User canceled
+
+      PlatformFile file = result.files.first;
+
+      // Store the local path based on what button was clicked
+      if (proofType == 'ID Proof' || proofType == 'Govt. Proof') {
+        uploadedIdProofPath = file.path;
+      } else if (proofType == 'Farm Proof') {
+        uploadedFarmProofPath = file.path;
+      } else if (proofType == 'Business Proof') {
+        uploadedBusinessProofPath = file.path;
+      } else if (proofType == 'Shop Proof') {
+        uploadedShopProofPath = file.path;
+      }
+
+      Get.snackbar('File Selected', '${file.name} ready for upload.');
+    } catch (e) {
+      Get.snackbar('Error', 'Could not pick file: $e',
+          backgroundColor: Colors.red, colorText: Colors.white);
+    }
   }
 
-  /// Creates both the Auth user and the Profile user.
+  /// 2. Helper to upload file to Supabase Storage ('userproofs')
+  Future<String?> _uploadFileToSupabase(
+      String? localPath, String userId, String folderName) async {
+    if (localPath == null) return null;
+
+    try {
+      final file = File(localPath);
+      final fileExt = localPath.split('.').last;
+      // Create a unique file name using timestamp
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      // Path: userId/folder/filename.jpg
+      final storagePath = '$userId/$folderName/$fileName';
+
+      // Upload to the 'userproofs' bucket
+      await supabase.storage.from('userproofs').upload(
+        storagePath,
+        file,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+      );
+
+      // Return the storage path to save in the database
+      return storagePath;
+    } catch (e) {
+      print("Upload Error: $e");
+      return null;
+    }
+  }
+
+  /// Creates Auth user, Uploads files, Creates Profile, Navigates Home.
   void saveProfile() async {
+    // --- FIX: Close Keyboard First ---
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future.delayed(const Duration(milliseconds: 100));
+
     if (!formKey.currentState!.validate()) return;
 
     Get.dialog(
@@ -70,11 +141,13 @@ class SetupAccountController extends GetxController {
     );
 
     try {
+      // Activate flag to prevent SplashController form auto-logging out
+      SplashController.isRegistering = true;
+
       final email = emailController.text.trim();
       final phone = phoneController.text.trim();
 
-      // --- 1. ENFORCE YOUR "ONE ROLE" RULE ---
-      // Check if email OR phone already exists in the profiles table.
+      // Check if user exists in profiles
       final check = await supabase
           .from('profiles')
           .select('role')
@@ -82,17 +155,16 @@ class SetupAccountController extends GetxController {
           .maybeSingle();
 
       if (check != null && check.isNotEmpty) {
-        // A profile with this email or phone ALREADY exists.
         final existingRole = check['role'];
         throw Exception(
             'This user is already registered as a $existingRole. Please log in.');
       }
 
-      // --- 2. CREATE AUTH USER ---
+      // Create Auth User
       final authResponse = await supabase.auth.signUp(
         email: email,
         password: passwordController.text.trim(),
-        phone: phone, // Attach phone to auth user too
+        phone: phone,
       );
 
       final authUser = authResponse.user;
@@ -100,7 +172,18 @@ class SetupAccountController extends GetxController {
         throw Exception('Could not sign up user.');
       }
 
-      // --- 3. CREATE USER MODEL ---
+      // --- UPLOAD FILES TO SUPABASE ---
+      // We do this after signup so we have the User ID for the folder structure
+      String? idProofUrl = await _uploadFileToSupabase(
+          uploadedIdProofPath, authUser.id, 'id_proofs');
+      String? farmProofUrl = await _uploadFileToSupabase(
+          uploadedFarmProofPath, authUser.id, 'farm_proofs');
+      String? businessProofUrl = await _uploadFileToSupabase(
+          uploadedBusinessProofPath, authUser.id, 'business_proofs');
+      String? shopProofUrl = await _uploadFileToSupabase(
+          uploadedShopProofPath, authUser.id, 'shop_proofs');
+
+      // Create User Model with real file paths
       final userModel = UserModel(
         userId: authUser.id,
         role: role,
@@ -108,7 +191,7 @@ class SetupAccountController extends GetxController {
         email: authUser.email,
         phone: authUser.phone,
 
-        // --- All dynamic fields ---
+        // --- Dynamic Fields ---
         fullName: (role == 'Farmer' ||
             role == 'Veterinarian' ||
             role == 'Chicks Delivery')
@@ -117,20 +200,20 @@ class SetupAccountController extends GetxController {
         address: (role == 'Veterinarian' || role == 'Chicks Delivery')
             ? addressController.text.trim()
             : null,
-        idProofPath: (role == 'Veterinarian' ||
-            role == 'Chicks Delivery' ||
-            role == 'Meat Shop')
-            ? 'dummy/id_proof.pdf'
-            : null,
-        farmAddress: role == 'Farmer' ? farmAddressController.text.trim() : null,
+        idProofPath: idProofUrl, // <--- Uses uploaded URL
+
+        farmAddress:
+        role == 'Farmer' ? farmAddressController.text.trim() : null,
         farmGpsLat: role == 'Farmer' ? farmGpsLatController.text.trim() : null,
-        farmGpsLong: role == 'Farmer' ? farmGpsLongController.text.trim() : null,
+        farmGpsLong:
+        role == 'Farmer' ? farmGpsLongController.text.trim() : null,
         landSize: role == 'Farmer' ? landSizeController.text.trim() : null,
         numberOfHens: role == 'Farmer'
             ? int.tryParse(numberOfHensController.text.trim())
             : null,
         typeOfHens: role == 'Farmer' ? selectedHenType.value : null,
-        farmProofPath: role == 'Farmer' ? 'dummy/farm_proof.pdf' : null,
+        farmProofPath: farmProofUrl, // <--- Uses uploaded URL
+
         clinicName:
         role == 'Veterinarian' ? clinicNameController.text.trim() : null,
         experience: (role == 'Veterinarian' || role == 'Chicks Delivery')
@@ -138,7 +221,8 @@ class SetupAccountController extends GetxController {
             : null,
         specialization:
         role == 'Veterinarian' ? selectedSpecialization.value : null,
-        companyName: role == 'Company' ? companyNameController.text.trim() : null,
+        companyName:
+        role == 'Company' ? companyNameController.text.trim() : null,
         ownerName: role == 'Company' ? ownerNameController.text.trim() : null,
         companyAddress:
         role == 'Company' ? companyAddressController.text.trim() : null,
@@ -148,31 +232,30 @@ class SetupAccountController extends GetxController {
             role == 'Meat Shop')
             ? int.tryParse(deliveryRadiusController.text.trim())
             : null,
-        businessProofPath:
-        role == 'Company' ? 'dummy/business_proof.pdf' : null,
+        businessProofPath: businessProofUrl, // <--- Uses uploaded URL
+
         vehicleType:
         role == 'Chicks Delivery' ? selectedVehicleType.value : null,
         shopName: role == 'Meat Shop' ? shopNameController.text.trim() : null,
         shopAddress:
         role == 'Meat Shop' ? shopAddressController.text.trim() : null,
-        shopProofPath: role == 'Meat Shop' ? 'dummy/shop_proof.pdf' : null,
+        shopProofPath: shopProofUrl, // <--- Uses uploaded URL
       );
 
-      // --- 4. SAVE PROFILE TO DATABASE ---
+      // Save Profile to DB
       final data = userModel.toJson();
-      data['id'] = authUser.id; // Link to auth.users table
+      data['id'] = authUser.id;
       data.removeWhere((key, value) => value == null);
 
       await supabase.from('profiles').insert(data);
 
-      // --- 5. HIDE LOADING & NAVIGATE ---
-      Get.back(); // Close loading dialog
-      // Success! The SplashController's stream will
-      // see the 'signedIn' event and navigate to the new home page.
-      // We pass the userModel just in case.
-      _navigateToHome(role, userModel);
+      // Deactivate Flag
+      SplashController.isRegistering = false;
 
+      Get.back(); // Close loading dialog
+      _navigateToHome(role, userModel);
     } catch (e) {
+      SplashController.isRegistering = false;
       Get.back(); // Close loading dialog
       Get.snackbar(
         'Sign Up Failed',
@@ -199,15 +282,14 @@ class SetupAccountController extends GetxController {
         Get.offAll(() => ChicksDeliveryHomeView(), arguments: userModel);
         break;
       case 'Meat Shop':
-        Get.snackbar('Success', 'Meat Shop Profile Saved!'); // Placeholder
-        // Get.offAll(() => MeatShopHomeView(), arguments: userModel);
+      // Navigates to the new Meat Shop View
+        Get.offAll(() => MeatShopHomeView(), arguments: userModel);
         break;
     }
   }
 
   @override
   void onClose() {
-    // Dispose all controllers
     emailController.dispose();
     passwordController.dispose();
     fullNameController.dispose();
