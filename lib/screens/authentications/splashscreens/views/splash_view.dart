@@ -7,17 +7,12 @@ import 'package:get/get.dart';
 
 import '../controllers/splash_controller.dart';
 
-
 class SplashView extends StatelessWidget {
   final SplashController controller = Get.put(SplashController());
 
   SplashView({super.key});
 
-  final List<Widget> _pages = [
-    SplashPage1(),
-    SplashPage2(),
-    SplashPage3(),
-  ];
+  final List<Widget> _pages = [SplashPage1(), SplashPage2(), SplashPage3()];
 
   @override
   Widget build(BuildContext context) {
@@ -38,11 +33,11 @@ class SplashView extends StatelessWidget {
               child: Column(
                 children: [
                   Obx(
-                        () => Row(
+                    () => Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         _pages.length,
-                            (index) => Container(
+                        (index) => Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           width: controller.currentPage.value == index ? 24 : 8,
                           height: 8,
@@ -60,7 +55,7 @@ class SplashView extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: Obx(
-                          () => ElevatedButton(
+                      () => ElevatedButton(
                         onPressed: controller.nextPage,
                         child: Text(
                           controller.currentPage.value == 2

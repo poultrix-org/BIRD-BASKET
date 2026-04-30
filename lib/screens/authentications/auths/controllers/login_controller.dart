@@ -82,8 +82,7 @@ class LoginController extends GetxController {
 
   /// Stub for Phone Sign-In.
   void signInWithPhone() {
-    Get.snackbar(
-        'Coming Soon', 'Phone number login will be available soon.');
+    Get.snackbar('Coming Soon', 'Phone number login will be available soon.');
   }
 
   /// Navigates to the "Sign Up" flow (Role Selection).

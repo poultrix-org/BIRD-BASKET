@@ -14,9 +14,7 @@ class SetupAccountCommonView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Create ${controller.role} Account'),
-      ),
+      appBar: AppBar(title: Text('Create ${controller.role} Account')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -32,7 +30,6 @@ class SetupAccountCommonView extends StatelessWidget {
 
               // --- NEW: Auth Fields ---
               _buildAuthFields(context), // <-- ADDED
-
               // --- DYNAMIC FORM ---
               _buildDynamicForm(context),
 
@@ -52,16 +49,16 @@ class SetupAccountCommonView extends StatelessWidget {
     );
   }
 
-// --- NEW WIDGET: Auth Fields ---
+  // --- NEW WIDGET: Auth Fields ---
   Widget _buildAuthFields(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Account Login Details',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -98,17 +95,17 @@ class SetupAccountCommonView extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           '${controller.role} Profile Details',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
       ],
     );
   }
 
-// --- WIDGET BUILDERS based on ROLE ---
-// This is the core logic for the dynamic view
+  // --- WIDGET BUILDERS based on ROLE ---
+  // This is the core logic for the dynamic view
   Widget _buildDynamicForm(BuildContext context) {
     switch (controller.role) {
       case 'Farmer':
@@ -130,16 +127,32 @@ class SetupAccountCommonView extends StatelessWidget {
     return Column(
       children: [
         _buildTextField(
-            controller.fullNameController, 'Full Name', Icons.person),
-        _buildTextField(controller.phoneController, 'Phone Number', Icons.phone,
-            keyboardType: TextInputType.phone),
+          controller.fullNameController,
+          'Full Name',
+          Icons.person,
+        ),
         _buildTextField(
-            controller.farmAddressController, 'Farm Address', Icons.location_on),
-        _buildTextField(controller.landSizeController, 'Land Size (in acres)',
-            Icons.landscape),
+          controller.phoneController,
+          'Phone Number',
+          Icons.phone,
+          keyboardType: TextInputType.phone,
+        ),
         _buildTextField(
-            controller.numberOfHensController, 'Number of Hens', Icons.numbers,
-            keyboardType: TextInputType.number),
+          controller.farmAddressController,
+          'Farm Address',
+          Icons.location_on,
+        ),
+        _buildTextField(
+          controller.landSizeController,
+          'Land Size (in acres)',
+          Icons.landscape,
+        ),
+        _buildTextField(
+          controller.numberOfHensController,
+          'Number of Hens',
+          Icons.numbers,
+          keyboardType: TextInputType.number,
+        ),
         _buildDropdown(
           hint: 'Type of Hens',
           icon: Icons.egg,
@@ -152,7 +165,7 @@ class SetupAccountCommonView extends StatelessWidget {
         _buildLocationPicker(context),
         _buildUploadButton(
           'Upload Farm Proof',
-              () => controller.uploadProof('Farm Proof'),
+          () => controller.uploadProof('Farm Proof'),
         ),
       ],
     );
@@ -162,14 +175,27 @@ class SetupAccountCommonView extends StatelessWidget {
     return Column(
       children: [
         _buildTextField(
-            controller.fullNameController, 'Full Name', Icons.person),
-        _buildTextField(controller.phoneController, 'Phone Number', Icons.phone,
-            keyboardType: TextInputType.phone),
+          controller.fullNameController,
+          'Full Name',
+          Icons.person,
+        ),
         _buildTextField(
-            controller.clinicNameController, 'Clinic Name', Icons.local_hospital),
+          controller.phoneController,
+          'Phone Number',
+          Icons.phone,
+          keyboardType: TextInputType.phone,
+        ),
         _buildTextField(
-            controller.experienceController, 'Experience (years)', Icons.star,
-            keyboardType: TextInputType.number),
+          controller.clinicNameController,
+          'Clinic Name',
+          Icons.local_hospital,
+        ),
+        _buildTextField(
+          controller.experienceController,
+          'Experience (years)',
+          Icons.star,
+          keyboardType: TextInputType.number,
+        ),
         _buildDropdown(
           hint: 'Specialization',
           icon: Icons.science,
@@ -180,10 +206,13 @@ class SetupAccountCommonView extends StatelessWidget {
           },
         ),
         _buildTextField(
-            controller.addressController, 'Address', Icons.location_city),
+          controller.addressController,
+          'Address',
+          Icons.location_city,
+        ),
         _buildUploadButton(
           'Upload Govt. Proof',
-              () => controller.uploadProof('Govt. Proof'),
+          () => controller.uploadProof('Govt. Proof'),
         ),
       ],
     );
@@ -193,13 +222,26 @@ class SetupAccountCommonView extends StatelessWidget {
     return Column(
       children: [
         _buildTextField(
-            controller.companyNameController, 'Company Name', Icons.business),
+          controller.companyNameController,
+          'Company Name',
+          Icons.business,
+        ),
         _buildTextField(
-            controller.ownerNameController, 'Owner Name', Icons.person_pin),
-        _buildTextField(controller.phoneController, 'Phone Number', Icons.phone,
-            keyboardType: TextInputType.phone),
-        _buildTextField(controller.companyAddressController, 'Company Address',
-            Icons.location_city),
+          controller.ownerNameController,
+          'Owner Name',
+          Icons.person_pin,
+        ),
+        _buildTextField(
+          controller.phoneController,
+          'Phone Number',
+          Icons.phone,
+          keyboardType: TextInputType.phone,
+        ),
+        _buildTextField(
+          controller.companyAddressController,
+          'Company Address',
+          Icons.location_city,
+        ),
         _buildDropdown(
           hint: 'Supply Type',
           icon: Icons.category,
@@ -209,12 +251,15 @@ class SetupAccountCommonView extends StatelessWidget {
             controller.selectedCompanySupplyType.value = val;
           },
         ),
-        _buildTextField(controller.deliveryRadiusController,
-            'Delivery Radius (km)', Icons.delivery_dining,
-            keyboardType: TextInputType.number),
+        _buildTextField(
+          controller.deliveryRadiusController,
+          'Delivery Radius (km)',
+          Icons.delivery_dining,
+          keyboardType: TextInputType.number,
+        ),
         _buildUploadButton(
           'Upload Business Proof',
-              () => controller.uploadProof('Business Proof'),
+          () => controller.uploadProof('Business Proof'),
         ),
       ],
     );
@@ -224,9 +269,16 @@ class SetupAccountCommonView extends StatelessWidget {
     return Column(
       children: [
         _buildTextField(
-            controller.fullNameController, 'Full Name', Icons.person),
-        _buildTextField(controller.phoneController, 'Phone Number', Icons.phone,
-            keyboardType: TextInputType.phone),
+          controller.fullNameController,
+          'Full Name',
+          Icons.person,
+        ),
+        _buildTextField(
+          controller.phoneController,
+          'Phone Number',
+          Icons.phone,
+          keyboardType: TextInputType.phone,
+        ),
         _buildDropdown(
           hint: 'Vehicle Type',
           icon: Icons.local_shipping,
@@ -237,16 +289,25 @@ class SetupAccountCommonView extends StatelessWidget {
           },
         ),
         _buildTextField(
-            controller.deliveryRadiusController, 'Delivery Radius (km)', Icons.map,
-            keyboardType: TextInputType.number),
+          controller.deliveryRadiusController,
+          'Delivery Radius (km)',
+          Icons.map,
+          keyboardType: TextInputType.number,
+        ),
         _buildTextField(
-            controller.experienceController, 'Experience (years)', Icons.star,
-            keyboardType: TextInputType.number),
+          controller.experienceController,
+          'Experience (years)',
+          Icons.star,
+          keyboardType: TextInputType.number,
+        ),
         _buildTextField(
-            controller.addressController, 'Address', Icons.location_city),
+          controller.addressController,
+          'Address',
+          Icons.location_city,
+        ),
         _buildUploadButton(
           'Upload ID Proof',
-              () => controller.uploadProof('ID Proof'),
+          () => controller.uploadProof('ID Proof'),
         ),
       ],
     );
@@ -256,45 +317,54 @@ class SetupAccountCommonView extends StatelessWidget {
     return Column(
       children: [
         _buildTextField(
-            controller.shopNameController, 'Shop Name', Icons.storefront),
-        _buildTextField(controller.phoneController, 'Phone Number', Icons.phone,
-            keyboardType: TextInputType.phone),
+          controller.shopNameController,
+          'Shop Name',
+          Icons.storefront,
+        ),
         _buildTextField(
-            controller.shopAddressController, 'Shop Address', Icons.location_on),
-        _buildTextField(controller.deliveryRadiusController,
-            'Delivery Radius (km)', Icons.map,
-            keyboardType: TextInputType.number),
+          controller.phoneController,
+          'Phone Number',
+          Icons.phone,
+          keyboardType: TextInputType.phone,
+        ),
+        _buildTextField(
+          controller.shopAddressController,
+          'Shop Address',
+          Icons.location_on,
+        ),
+        _buildTextField(
+          controller.deliveryRadiusController,
+          'Delivery Radius (km)',
+          Icons.map,
+          keyboardType: TextInputType.number,
+        ),
         _buildUploadButton(
           'Upload Shop Proof',
-              () => controller.uploadProof('Shop Proof'),
+          () => controller.uploadProof('Shop Proof'),
         ),
         _buildUploadButton(
           'Upload ID Proof',
-              () => controller.uploadProof('ID Proof'),
+          () => controller.uploadProof('ID Proof'),
         ),
       ],
     );
   }
 
-
-// --- COMMON HELPER WIDGETS ---
-// (These are all unchanged)
+  // --- COMMON HELPER WIDGETS ---
+  // (These are all unchanged)
 
   Widget _buildTextField(
-      TextEditingController controller,
-      String label,
-      IconData icon, {
-        TextInputType? keyboardType,
-      }) {
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType? keyboardType,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-        ),
+        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter $label';
@@ -315,18 +385,12 @@ class SetupAccountCommonView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Obx(
-            () => DropdownButtonFormField<String>(
+        () => DropdownButtonFormField<String>(
           value: observableValue.value,
-          decoration: InputDecoration(
-            labelText: hint,
-            prefixIcon: Icon(icon),
-          ),
+          decoration: InputDecoration(labelText: hint, prefixIcon: Icon(icon)),
           hint: Text(hint),
           items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
+            return DropdownMenuItem<String>(value: item, child: Text(item));
           }).toList(),
           onChanged: onChanged,
           validator: (value) {
@@ -346,15 +410,21 @@ class SetupAccountCommonView extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _buildTextField(controller.farmGpsLatController,
-                  'Farm GPS (Lat)', Icons.gps_fixed,
-                  keyboardType: TextInputType.number),
+              child: _buildTextField(
+                controller.farmGpsLatController,
+                'Farm GPS (Lat)',
+                Icons.gps_fixed,
+                keyboardType: TextInputType.number,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildTextField(controller.farmGpsLongController,
-                  'Farm GPS (Long)', Icons.gps_fixed,
-                  keyboardType: TextInputType.number),
+              child: _buildTextField(
+                controller.farmGpsLongController,
+                'Farm GPS (Long)',
+                Icons.gps_fixed,
+                keyboardType: TextInputType.number,
+              ),
             ),
           ],
         ),

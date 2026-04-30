@@ -18,17 +18,17 @@ class SplashPage2 extends StatelessWidget {
           const SizedBox(height: 40),
           Text(
             'Find Your Role',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 15),
           Text(
             'Whether you are a farmer, vet, or supplier, there is a place for you.',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.grey[700],
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: Colors.grey[700]),
             textAlign: TextAlign.center,
           ),
         ],

@@ -18,17 +18,17 @@ class SplashPage3 extends StatelessWidget {
           const SizedBox(height: 40),
           Text(
             'Grow Your Business',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 15),
           Text(
             'Streamline operations, connect with partners, and manage your poultry needs.',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.grey[700],
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: Colors.grey[700]),
             textAlign: TextAlign.center,
           ),
         ],

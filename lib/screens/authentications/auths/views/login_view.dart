@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
 
 class LoginView extends StatelessWidget {
-  final LoginController controller = Get.put(LoginController());
+  LoginController get controller => Get.put(LoginController());
 
   LoginView({super.key});
 
@@ -71,19 +71,19 @@ class LoginView extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
                   Obx(
-                        () => ElevatedButton(
+                    () => ElevatedButton(
                       onPressed: controller.isLoading.value
                           ? null
                           : controller.signInWithEmail,
                       child: controller.isLoading.value
                           ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Text('Sign In'),
                     ),
                   ),
@@ -101,7 +101,7 @@ class LoginView extends StatelessWidget {
                   const SizedBox(height: 20),
                   // --- Social & Phone Buttons ---
                   Obx(
-                        () => _buildSocialButton(
+                    () => _buildSocialButton(
                       icon: Icons.g_mobiledata_outlined,
                       label: 'Sign in with Google',
                       onPressed: controller.isLoading.value
@@ -111,7 +111,7 @@ class LoginView extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Obx(
-                        () => _buildSocialButton(
+                    () => _buildSocialButton(
                       icon: Icons.facebook,
                       label: 'Sign in with Facebook',
                       onPressed: controller.isLoading.value
@@ -121,7 +121,7 @@ class LoginView extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Obx(
-                        () => _buildSocialButton(
+                    () => _buildSocialButton(
                       icon: Icons.phone,
                       label: 'Sign in with Phone',
                       onPressed: controller.isLoading.value
@@ -168,16 +168,11 @@ class LoginView extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, color: Colors.brown[700]),
-      label: Text(
-        label,
-        style: TextStyle(color: Colors.brown[900]),
-      ),
+      label: Text(label, style: TextStyle(color: Colors.brown[900])),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
         side: BorderSide(color: Colors.grey[300]!),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

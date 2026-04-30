@@ -94,14 +94,21 @@ class SetupAccountController extends GetxController {
 
       Get.snackbar('File Selected', '${file.name} ready for upload.');
     } catch (e) {
-      Get.snackbar('Error', 'Could not pick file: $e',
-          backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        'Could not pick file: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
   /// 2. Helper to upload file to Supabase Storage ('userproofs')
   Future<String?> _uploadFileToSupabase(
-      String? localPath, String userId, String folderName) async {
+    String? localPath,
+    String userId,
+    String folderName,
+  ) async {
     if (localPath == null) return null;
 
     try {
@@ -113,11 +120,13 @@ class SetupAccountController extends GetxController {
       final storagePath = '$userId/$folderName/$fileName';
 
       // Upload to the 'userproofs' bucket
-      await supabase.storage.from('userproofs').upload(
-        storagePath,
-        file,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-      );
+      await supabase.storage
+          .from('userproofs')
+          .upload(
+            storagePath,
+            file,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
 
       // Return the storage path to save in the database
       return storagePath;
@@ -157,7 +166,8 @@ class SetupAccountController extends GetxController {
       if (check != null && check.isNotEmpty) {
         final existingRole = check['role'];
         throw Exception(
-            'This user is already registered as a $existingRole. Please log in.');
+          'This user is already registered as a $existingRole. Please log in.',
+        );
       }
 
       // Create Auth User
@@ -175,13 +185,25 @@ class SetupAccountController extends GetxController {
       // --- UPLOAD FILES TO SUPABASE ---
       // We do this after signup so we have the User ID for the folder structure
       String? idProofUrl = await _uploadFileToSupabase(
-          uploadedIdProofPath, authUser.id, 'id_proofs');
+        uploadedIdProofPath,
+        authUser.id,
+        'id_proofs',
+      );
       String? farmProofUrl = await _uploadFileToSupabase(
-          uploadedFarmProofPath, authUser.id, 'farm_proofs');
+        uploadedFarmProofPath,
+        authUser.id,
+        'farm_proofs',
+      );
       String? businessProofUrl = await _uploadFileToSupabase(
-          uploadedBusinessProofPath, authUser.id, 'business_proofs');
+        uploadedBusinessProofPath,
+        authUser.id,
+        'business_proofs',
+      );
       String? shopProofUrl = await _uploadFileToSupabase(
-          uploadedShopProofPath, authUser.id, 'shop_proofs');
+        uploadedShopProofPath,
+        authUser.id,
+        'shop_proofs',
+      );
 
       // Create User Model with real file paths
       final userModel = UserModel(
@@ -192,9 +214,10 @@ class SetupAccountController extends GetxController {
         phone: authUser.phone,
 
         // --- Dynamic Fields ---
-        fullName: (role == 'Farmer' ||
-            role == 'Veterinarian' ||
-            role == 'Chicks Delivery')
+        fullName:
+            (role == 'Farmer' ||
+                role == 'Veterinarian' ||
+                role == 'Chicks Delivery')
             ? fullNameController.text.trim()
             : null,
         address: (role == 'Veterinarian' || role == 'Chicks Delivery')
@@ -202,11 +225,13 @@ class SetupAccountController extends GetxController {
             : null,
         idProofPath: idProofUrl, // <--- Uses uploaded URL
 
-        farmAddress:
-        role == 'Farmer' ? farmAddressController.text.trim() : null,
+        farmAddress: role == 'Farmer'
+            ? farmAddressController.text.trim()
+            : null,
         farmGpsLat: role == 'Farmer' ? farmGpsLatController.text.trim() : null,
-        farmGpsLong:
-        role == 'Farmer' ? farmGpsLongController.text.trim() : null,
+        farmGpsLong: role == 'Farmer'
+            ? farmGpsLongController.text.trim()
+            : null,
         landSize: role == 'Farmer' ? landSizeController.text.trim() : null,
         numberOfHens: role == 'Farmer'
             ? int.tryParse(numberOfHensController.text.trim())
@@ -214,31 +239,38 @@ class SetupAccountController extends GetxController {
         typeOfHens: role == 'Farmer' ? selectedHenType.value : null,
         farmProofPath: farmProofUrl, // <--- Uses uploaded URL
 
-        clinicName:
-        role == 'Veterinarian' ? clinicNameController.text.trim() : null,
+        clinicName: role == 'Veterinarian'
+            ? clinicNameController.text.trim()
+            : null,
         experience: (role == 'Veterinarian' || role == 'Chicks Delivery')
             ? int.tryParse(experienceController.text.trim())
             : null,
-        specialization:
-        role == 'Veterinarian' ? selectedSpecialization.value : null,
-        companyName:
-        role == 'Company' ? companyNameController.text.trim() : null,
+        specialization: role == 'Veterinarian'
+            ? selectedSpecialization.value
+            : null,
+        companyName: role == 'Company'
+            ? companyNameController.text.trim()
+            : null,
         ownerName: role == 'Company' ? ownerNameController.text.trim() : null,
-        companyAddress:
-        role == 'Company' ? companyAddressController.text.trim() : null,
+        companyAddress: role == 'Company'
+            ? companyAddressController.text.trim()
+            : null,
         supplyType: role == 'Company' ? selectedCompanySupplyType.value : null,
-        deliveryRadius: (role == 'Company' ||
-            role == 'Chicks Delivery' ||
-            role == 'Meat Shop')
+        deliveryRadius:
+            (role == 'Company' ||
+                role == 'Chicks Delivery' ||
+                role == 'Meat Shop')
             ? int.tryParse(deliveryRadiusController.text.trim())
             : null,
         businessProofPath: businessProofUrl, // <--- Uses uploaded URL
 
-        vehicleType:
-        role == 'Chicks Delivery' ? selectedVehicleType.value : null,
+        vehicleType: role == 'Chicks Delivery'
+            ? selectedVehicleType.value
+            : null,
         shopName: role == 'Meat Shop' ? shopNameController.text.trim() : null,
-        shopAddress:
-        role == 'Meat Shop' ? shopAddressController.text.trim() : null,
+        shopAddress: role == 'Meat Shop'
+            ? shopAddressController.text.trim()
+            : null,
         shopProofPath: shopProofUrl, // <--- Uses uploaded URL
       );
 
@@ -282,7 +314,7 @@ class SetupAccountController extends GetxController {
         Get.offAll(() => ChicksDeliveryHomeView(), arguments: userModel);
         break;
       case 'Meat Shop':
-      // Navigates to the new Meat Shop View
+        // Navigates to the new Meat Shop View
         Get.offAll(() => MeatShopHomeView(), arguments: userModel);
         break;
     }

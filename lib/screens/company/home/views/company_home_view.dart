@@ -12,9 +12,7 @@ class CompanyHomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Company Dashboard'),
-      ),
+      appBar: AppBar(title: Text('Company Dashboard')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -22,15 +20,18 @@ class CompanyHomeView extends StatelessWidget {
           children: [
             Text(
               'Welcome, ${controller.user.companyName}!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Chip(
               label: Text(
                 controller.user.role,
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               backgroundColor: Colors.brown[700],
             ),
@@ -44,7 +45,10 @@ class CompanyHomeView extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Get.snackbar('Notice', 'Edit Profile is not yet implemented.');
+                  Get.snackbar(
+                    'Notice',
+                    'Edit Profile is not yet implemented.',
+                  );
                 },
                 child: const Text('Edit Profile'),
               ),

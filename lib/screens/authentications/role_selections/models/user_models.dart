@@ -87,7 +87,7 @@ class UserModel {
         return fullName ?? 'N/A';
       case 'Company':
         return companyName ?? 'N/A';
-    // --- NEW: Meat Shop ---
+      // --- NEW: Meat Shop ---
       case 'Meat Shop':
         return shopName ?? 'N/A';
       default:

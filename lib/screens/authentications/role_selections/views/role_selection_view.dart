@@ -18,9 +18,11 @@ class RoleSelectionView extends StatelessWidget {
         automaticallyImplyLeading: false,
         centerTitle: true,
       ),
-      body: Column( // <-- 1. Wrapped in Column
+      body: Column(
+        // <-- 1. Wrapped in Column
         children: [
-          Expanded( // <-- 2. GridView is in Expanded
+          Expanded(
+            // <-- 2. GridView is in Expanded
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: GridView.builder(
@@ -46,8 +48,9 @@ class RoleSelectionView extends StatelessWidget {
 
           // --- 3. NEW: Sign In Button Section ---
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0)
-                .copyWith(bottom: 24.0, top: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+            ).copyWith(bottom: 24.0, top: 8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -95,23 +98,17 @@ class RoleCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 50,
-              color: Colors.brown[700],
-            ),
+            Icon(icon, size: 50, color: Colors.brown[700]),
             const SizedBox(height: 16),
             Text(
               role,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ],

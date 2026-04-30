@@ -12,9 +12,7 @@ class MeatShopHomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meat Shop Dashboard'),
-      ),
+      appBar: AppBar(title: const Text('Meat Shop Dashboard')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -23,9 +21,9 @@ class MeatShopHomeView extends StatelessWidget {
             // 1. Welcome Header
             Text(
               'Welcome, ${controller.user.shopName}!', // Using Shop Name
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
 
@@ -33,7 +31,10 @@ class MeatShopHomeView extends StatelessWidget {
             Chip(
               label: Text(
                 controller.user.role,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               backgroundColor: Colors.brown[700],
             ),
@@ -42,16 +43,30 @@ class MeatShopHomeView extends StatelessWidget {
             // 3. Shop Details Card
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    _buildInfoRow(Icons.location_on, "Address", controller.user.shopAddress ?? "N/A"),
+                    _buildInfoRow(
+                      Icons.location_on,
+                      "Address",
+                      controller.user.shopAddress ?? "N/A",
+                    ),
                     const Divider(),
-                    _buildInfoRow(Icons.map, "Delivery Radius", "${controller.user.deliveryRadius} km"),
+                    _buildInfoRow(
+                      Icons.map,
+                      "Delivery Radius",
+                      "${controller.user.deliveryRadius} km",
+                    ),
                     const Divider(),
-                    _buildInfoRow(Icons.phone, "Contact", controller.user.phone ?? "N/A"),
+                    _buildInfoRow(
+                      Icons.phone,
+                      "Contact",
+                      controller.user.phone ?? "N/A",
+                    ),
                   ],
                 ),
               ),
@@ -84,8 +99,17 @@ class MeatShopHomeView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
