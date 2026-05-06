@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../controllers/track_vet_controller.dart';
 
 class TrackVetView extends StatelessWidget {
   final TrackVetController controller = Get.put(TrackVetController());
 
-  TrackVetView({super.key});
+  TrackVetView({super.key}) {
+    controller.onVetMarkerTapped = () {
+      if (controller.fullVetData.isNotEmpty) {
+        _showVetDetailsBottomSheet(controller.fullVetData);
+      }
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,43 +22,39 @@ class TrackVetView extends StatelessWidget {
         title: const Text(
           'Track Vet',
           style: TextStyle(
-            fontFamily: 'Times New Roman',
             fontWeight: FontWeight.bold,
+            color: Color(0xFF1B5E20),
           ),
         ),
         backgroundColor: Colors.white,
-
         elevation: 1,
+        iconTheme: const IconThemeData(color: Color(0xFF1B5E20)),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Dummy Map Container
-            Container(
-              height: 250,
-              width: double.infinity,
-              color: Colors.grey.shade300,
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Icon(Icons.map, size: 80, color: Colors.grey),
-                  ),
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton(
-                      mini: true,
-                      backgroundColor: Colors.white,
-
-                      onPressed: () {},
-                      child: const Icon(Icons.my_location),
-                    ),
-                  ),
-                ],
+      body: Column(
+        children: [
+          // Real Google Map Container
+          SizedBox(
+            height: 300,
+            width: double.infinity,
+            child: Obx(
+              () => GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(controller.farmerLat.value, controller.farmerLng.value),
+                  zoom: 14.0,
+                ),
+                myLocationEnabled: false,
+                myLocationButtonEnabled: false,
+                mapType: MapType.normal,
+                markers: controller.markers.toSet(),
+                onMapCreated: (GoogleMapController mapCtrl) {
+                  controller.mapController.complete(mapCtrl);
+                },
               ),
             ),
+          ),
 
-            Padding(
+          Expanded(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,32 +62,30 @@ class TrackVetView extends StatelessWidget {
                   const Text(
                     'Trip Status',
                     style: TextStyle(
-                      fontFamily: 'Times New Roman',
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.teal,
+                      color: Color(0xFF1B5E20),
                     ),
                   ),
                   const SizedBox(height: 20),
                   _buildTrackerStep('Booking Confirmed', 0),
-                  _buildTrackerStep(
-                    'Vet Assigned: ${controller.vetName.value}',
-                    1,
-                  ),
-                  _buildTrackerStep(
-                    'On the Way (ETA: ${controller.vetETA.value})',
-                    2,
-                  ),
+                  Obx(() => _buildTrackerStep(
+                      currentStatusValue() >= 1 ? 'Vet Assigned: ${controller.vetName.value}' : 'Assigning Vet...',
+                      1,
+                    )),
+                  Obx(() => _buildTrackerStep(
+                      currentStatusValue() >= 2 ? 'On the Way (ETA: ${controller.vetETA.value})' : 'Waiting for Departure...',
+                      2,
+                    )),
                   _buildTrackerStep('Arrived at Farm', 3),
 
                   const SizedBox(height: 32),
                   const Text(
                     'Vet Details',
                     style: TextStyle(
-                      fontFamily: 'Times New Roman',
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.teal,
+                      color: Color(0xFF1B5E20),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -95,11 +96,11 @@ class TrackVetView extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black12,
                           blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          offset: Offset(0, 4),
                         ),
                       ],
                     ),
@@ -109,11 +110,11 @@ class TrackVetView extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 30,
-                              backgroundColor: Colors.teal.shade100,
+                              backgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1),
                               child: const Icon(
                                 Icons.person,
                                 size: 40,
-                                color: Colors.teal,
+                                color: Color(0xFF1B5E20),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -121,14 +122,13 @@ class TrackVetView extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    controller.vetName.value,
-                                    style: const TextStyle(
-                                      fontFamily: 'Times New Roman',
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  Obx(() => Text(
+                                        controller.vetName.value,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )),
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
@@ -138,20 +138,19 @@ class TrackVetView extends StatelessWidget {
                                         size: 16,
                                       ),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        '${controller.vetRating.value} Rating',
-                                        style: const TextStyle(
-                                          fontFamily: 'Times New Roman',
-                                          color: Colors.grey,
-                                        ),
-                                      ),
+                                      Obx(() => Text(
+                                            '${controller.vetRating.value} Rating',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          )),
                                     ],
                                   ),
                                 ],
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.phone, color: Colors.teal),
+                              icon: const Icon(Icons.phone, color: Color(0xFF1B5E20)),
                               onPressed: () => controller.callVet(),
                             ),
                           ],
@@ -161,12 +160,11 @@ class TrackVetView extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             TextButton.icon(
-                              icon: const Icon(Icons.call, color: Colors.teal),
+                              icon: const Icon(Icons.call, color: Color(0xFF1B5E20)),
                               label: const Text(
                                 'Call',
                                 style: TextStyle(
-                                  fontFamily: 'Times New Roman',
-                                  color: Colors.teal,
+                                  color: Color(0xFF1B5E20),
                                 ),
                               ),
                               onPressed: () => controller.callVet(),
@@ -176,7 +174,6 @@ class TrackVetView extends StatelessWidget {
                               label: const Text(
                                 'Cancel Visit',
                                 style: TextStyle(
-                                  fontFamily: 'Times New Roman',
                                   color: Colors.red,
                                 ),
                               ),
@@ -190,11 +187,13 @@ class TrackVetView extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  int currentStatusValue() => controller.currentStatus.value;
 
   Widget _buildTrackerStep(String title, int stepIndex) {
     return Obx(() {
@@ -207,7 +206,7 @@ class TrackVetView extends StatelessWidget {
       if (isActive && stepIndex == 2) {
         color = Colors.orange; // Pulsing orange for on the way
       } else if (isCompleted || isActive) {
-        color = Colors.green;
+        color = const Color(0xFF1B5E20);
       }
 
       return Row(
@@ -231,7 +230,7 @@ class TrackVetView extends StatelessWidget {
                 Container(
                   width: 2,
                   height: 40,
-                  color: isCompleted ? Colors.green : Colors.grey.shade300,
+                  color: isCompleted ? const Color(0xFF1B5E20) : Colors.grey.shade300,
                 ),
             ],
           ),
@@ -242,7 +241,6 @@ class TrackVetView extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
-                  fontFamily: 'Times New Roman',
                   fontSize: isActive ? 16 : 14,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   color: isActive
@@ -255,5 +253,105 @@ class TrackVetView extends StatelessWidget {
         ],
       );
     });
+  }
+
+  void _showVetDetailsBottomSheet(Map<String, dynamic> vet) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                  child: const Icon(Icons.person, size: 36, color: Color(0xFF1B5E20)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        vet['name'] ?? 'Unknown Vet',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${vet['rating']}',
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Doctor Details',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            _buildDetailRow(Icons.work, 'Experience', '${vet['experience_years']} Years'),
+            _buildDetailRow(Icons.location_on, 'Distance', '${(vet['distance'] as double).toStringAsFixed(1)} km away'),
+            _buildDetailRow(Icons.verified, 'Speciality', 'Poultry & Livestock Expert'),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.grey.shade500, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            '$title:',
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          ),
+        ],
+      ),
+    );
   }
 }

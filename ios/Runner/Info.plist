@@ -49,5 +49,9 @@
 	<string>We need your location to find nearby market rates and disease alerts.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>We need your location to find nearby market rates and disease alerts.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need speech recognition for voice input</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access for voice input</string>
 </dict>
 </plist>

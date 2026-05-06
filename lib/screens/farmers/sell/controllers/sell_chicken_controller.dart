@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../home/controllers/farmers_home_controller.dart';
 
@@ -21,8 +22,13 @@ class SellChickenController extends GetxController {
   var totalQuantity = 0.0.obs;
   var availableDate = Rxn<DateTime>();
   var acceptNegotiation = false.obs;
-  var imagePath = RxnString();
+  var imagePaths = <RxnString>[RxnString(), RxnString(), RxnString()].obs;
   var isLoading = false.obs;
+
+  // Speech-to-text
+  final stt.SpeechToText speech = stt.SpeechToText();
+  var isListening = false.obs;
+  var activeFieldForVoice = ''.obs;
 
   var myActiveListings = <Map<String, dynamic>>[].obs;
   var isLoadingListings = true.obs;
@@ -37,6 +43,17 @@ class SellChickenController extends GetxController {
     // Pre-calculate to initialize zero properly
     calculateTotal();
     fetchMyListings();
+  }
+
+  @override
+  void onClose() {
+    speech.stop();
+    birdsController.dispose();
+    weightController.dispose();
+    priceController.dispose();
+    locationController.dispose();
+    notesController.dispose();
+    super.onClose();
   }
 
   void openForm() {
@@ -57,7 +74,51 @@ class SellChickenController extends GetxController {
     totalQuantity.value = 0.0;
     availableDate.value = null;
     acceptNegotiation.value = false;
-    imagePath.value = null;
+    for (var img in imagePaths) {
+      img.value = null;
+    }
+  }
+
+  Future<void> startListening(String fieldName, TextEditingController textController) async {
+    bool available = await speech.initialize(
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          isListening.value = false;
+          activeFieldForVoice.value = '';
+        }
+      },
+      onError: (error) {
+        isListening.value = false;
+        activeFieldForVoice.value = '';
+      },
+    );
+
+    if (available) {
+      isListening.value = true;
+      activeFieldForVoice.value = fieldName;
+      speech.listen(
+        onResult: (result) {
+          textController.text = result.recognizedWords;
+          if (fieldName == 'quantity' || fieldName == 'weight') {
+            calculateTotal();
+          }
+        },
+        listenFor: const Duration(seconds: 15),
+        localeId: 'en_IN',
+      );
+    } else {
+      Get.snackbar(
+        'Mic Unavailable',
+        'Speech recognition is not available on this device',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void stopListening() {
+    speech.stop();
+    isListening.value = false;
+    activeFieldForVoice.value = '';
   }
 
   Future<void> fetchMyListings() async {
@@ -140,13 +201,14 @@ class SellChickenController extends GetxController {
     );
   }
 
-  Future<void> pickImage() async {
+  Future<void> pickImage(int index) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
     );
 
     if (result != null && result.files.single.path != null) {
-      imagePath.value = result.files.single.path!;
+      imagePaths[index].value = result.files.single.path!;
+      imagePaths.refresh();
     }
   }
 
@@ -160,10 +222,11 @@ class SellChickenController extends GetxController {
       );
       return;
     }
-    if (imagePath.value == null) {
+    final missingImages = imagePaths.where((img) => img.value == null).length;
+    if (missingImages > 0) {
       Get.snackbar(
         'Validation',
-        'Please upload a photo of the chickens',
+        'Please upload all 3 chicken photos',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -180,25 +243,26 @@ class SellChickenController extends GetxController {
           "User token missing! Please manually logout and re-login completely.",
         );
 
-      // Actually upload the image to Supabase Storage
-      String imageUrl = "";
-      try {
-        final file = File(imagePath.value!);
-        final ext = file.path.split('.').last;
-        final fileName =
-            '${DateTime.now().millisecondsSinceEpoch}_${userId}.$ext';
+      // Upload all 3 images to Supabase Storage
+      List<String> imageUrls = [];
+      for (int i = 0; i < imagePaths.length; i++) {
+        try {
+          final file = File(imagePaths[i].value!);
+          final ext = file.path.split('.').last;
+          final fileName =
+              '${DateTime.now().millisecondsSinceEpoch}_${userId}_$i.$ext';
 
-        // Attempt to upload to a Supabase bucket named "chicken_images"
-        await supabase.storage.from('chicken_images').upload(fileName, file);
-        imageUrl = supabase.storage
-            .from('chicken_images')
-            .getPublicUrl(fileName);
-      } catch (storageErr) {
-        print(
-          "Image storage bucket upload failed. Ensure 'chicken_images' public bucket is created: $storageErr",
-        );
-        // Fallback or leave empty to not crash list if bucket isn't set up yet
-        imageUrl = "supabase_bucket_not_configured";
+          await supabase.storage.from('chicken_images').upload(fileName, file);
+          final url = supabase.storage
+              .from('chicken_images')
+              .getPublicUrl(fileName);
+          imageUrls.add(url);
+        } catch (storageErr) {
+          print(
+            "Image $i upload failed: $storageErr",
+          );
+          imageUrls.add("supabase_bucket_not_configured");
+        }
       }
 
       final payload = {
@@ -214,7 +278,8 @@ class SellChickenController extends GetxController {
           "address": locationController.text,
         },
         "notes": notesController.text,
-        "image_url": imageUrl,
+        "image_url": imageUrls.isNotEmpty ? imageUrls[0] : "",
+        "image_urls": imageUrls,
         "status": "active",
         "accept_negotiation": acceptNegotiation.value,
         // created_at is handled by DB defaults if omitted

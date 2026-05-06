@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -352,22 +353,54 @@ class SellChickenView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Cover Area
-                      Container(
-                        width: double.infinity,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.inventory_2_outlined,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
+                      // Image Carousel
+                      Builder(
+                        builder: (context) {
+                          final List<String> urls = [];
+                          if (item['image_urls'] != null && item['image_urls'] is List) {
+                            for (var u in item['image_urls']) {
+                              if (u != null && u.toString().startsWith('http')) {
+                                urls.add(u.toString());
+                              }
+                            }
+                          }
+                          if (urls.isEmpty && item['image_url'] != null &&
+                              item['image_url'].toString().startsWith('http')) {
+                            urls.add(item['image_url'].toString());
+                          }
+                          if (urls.isEmpty) {
+                            return Container(
+                              width: double.infinity,
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Center(
+                                child: Icon(Icons.image_not_supported_outlined,
+                                    size: 64, color: Colors.grey.shade400),
+                              ),
+                            );
+                          }
+                          return SizedBox(
+                            height: 200,
+                            child: PageView.builder(
+                              itemCount: urls.length,
+                              itemBuilder: (context, i) {
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    image: DecorationImage(
+                                      image: NetworkImage(urls[i]),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -569,16 +602,20 @@ class SellChickenView extends StatelessWidget {
             _buildCard(
               child: Column(
                 children: [
-                  _buildTextField(
-                    controller: controller.birdsController,
+                  _buildTextFieldWithMic(
+                    textController: controller.birdsController,
                     label: 'Quantity',
+                    hint: 'e.g. 50',
+                    fieldName: 'quantity',
                     keyboardType: TextInputType.number,
                     onChanged: (_) => controller.calculateTotal(),
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: controller.weightController,
+                  _buildTextFieldWithMic(
+                    textController: controller.weightController,
                     label: 'Approx Weight per Bird (kg)',
+                    hint: 'e.g. 1.5',
+                    fieldName: 'weight',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -667,9 +704,11 @@ class SellChickenView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: controller.priceController,
+                  _buildTextFieldWithMic(
+                    textController: controller.priceController,
                     label: 'Expected Price per Kg (₹)',
+                    hint: 'e.g. 100',
+                    fieldName: 'price',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -713,9 +752,11 @@ class SellChickenView extends StatelessWidget {
                     onPressed: () => controller.detectLocation(),
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: controller.locationController,
+                  _buildTextFieldWithMic(
+                    textController: controller.locationController,
                     label: 'Or Enter Address Manually',
+                    hint: 'e.g. Farm No. 12, Kangeyam, Tamil Nadu',
+                    fieldName: 'location',
                   ),
                 ],
               ),
@@ -731,10 +772,13 @@ class SellChickenView extends StatelessWidget {
             const SizedBox(height: 8),
             _buildSectionTitle('Additional Info'),
             _buildCard(
-              child: _buildTextField(
-                controller: controller.notesController,
-                label: 'Notes (e.g. Healthy broilers, ready in 3 days)',
+              child: _buildTextFieldWithMic(
+                textController: controller.notesController,
+                label: 'Notes',
+                hint: 'e.g. Healthy broilers, ready in 3 days',
+                fieldName: 'notes',
                 maxLines: 3,
+                isRequired: false,
               ),
             ),
 
@@ -746,29 +790,60 @@ class SellChickenView extends StatelessWidget {
               endIndent: 8,
             ),
             const SizedBox(height: 8),
-            _buildSectionTitle('Upload Proof'),
+            _buildSectionTitle('Upload Photos'),
             const Text(
-              'Upload real photos to build trust.',
+              'Upload 3 chicken photos (compulsory).',
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 10),
-            _buildCard(
-              child: Column(
-                children: [
-                  _buildUploadButton(
-                    'Upload Chicken Photo',
-                    () => controller.pickImage(),
-                  ),
-                  const SizedBox(height: 12),
-                  Obx(
-                    () => controller.imagePath.value != null
-                        ? const Text(
-                            'Photo selected',
-                            style: TextStyle(color: Color(0xFF5D654E)),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
+            Obx(
+              () => Row(
+                children: List.generate(3, (index) {
+                  final path = controller.imagePaths[index].value;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => controller.pickImage(index),
+                      child: Container(
+                        height: 100,
+                        margin: EdgeInsets.only(
+                          right: index < 2 ? 8 : 0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: path != null
+                                ? const Color(0xFF5D654E)
+                                : Colors.grey.shade300,
+                          ),
+                          image: path != null
+                              ? DecorationImage(
+                                  image: FileImage(File(path)),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: path == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo,
+                                      color: Colors.grey.shade400, size: 28),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Photo ${index + 1}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                }),
               ),
             ),
 
@@ -829,11 +904,14 @@ class SellChickenView extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
+  Widget _buildTextFieldWithMic({
+    required TextEditingController textController,
     required String label,
+    required String hint,
+    required String fieldName,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool isRequired = true,
     void Function(String)? onChanged,
   }) {
     return Column(
@@ -848,35 +926,81 @@ class SellChickenView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
+        Obx(
+          () => TextFormField(
+            controller: textController,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 13,
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              suffixIcon: GestureDetector(
+                onTap: () {
+                  if (controller.isListening.value &&
+                      controller.activeFieldForVoice.value == fieldName) {
+                    controller.stopListening();
+                  } else {
+                    controller.startListening(fieldName, textController);
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: controller.isListening.value &&
+                            controller.activeFieldForVoice.value == fieldName
+                        ? Colors.red.shade50
+                        : Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    controller.isListening.value &&
+                            controller.activeFieldForVoice.value == fieldName
+                        ? Icons.mic
+                        : Icons.mic_none,
+                    color: controller.isListening.value &&
+                            controller.activeFieldForVoice.value == fieldName
+                        ? Colors.red
+                        : Colors.grey.shade600,
+                    size: 20,
+                  ),
+                ),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: controller.isListening.value &&
+                          controller.activeFieldForVoice.value == fieldName
+                      ? Colors.red
+                      : Colors.grey.shade300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF5D654E)),
+              ),
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Color(0xFF5D654E)),
-            ),
+            validator: isRequired
+                ? (value) {
+                    if (value == null || value.isEmpty) return 'This field is required';
+                    return null;
+                  }
+                : null,
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) return 'This field is required';
-            return null;
-          },
         ),
       ],
     );

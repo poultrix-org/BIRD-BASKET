@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../home/controllers/farmers_home_controller.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'dart:io';
 
 class BookVetController extends GetxController {
@@ -32,8 +33,14 @@ class BookVetController extends GetxController {
 
   var visitType = 'Immediate'.obs; // 'Immediate' or 'Schedule'
   var scheduledDate = Rxn<DateTime>();
-  var imagePath = RxnString();
+  var imagePaths = <RxnString>[RxnString(), RxnString(), RxnString()].obs;
   var isLoading = false.obs;
+  var paymentMode = 'pay_later'.obs; // 'pay_now' or 'pay_later'
+
+  // Speech-to-text
+  final stt.SpeechToText speech = stt.SpeechToText();
+  var isListening = false.obs;
+  var activeFieldForVoice = ''.obs; // which field mic is for
 
   double lat = 0.0;
   double lng = 0.0;
@@ -44,6 +51,45 @@ class BookVetController extends GetxController {
     } else {
       selectedSymptoms.add(symptom);
     }
+  }
+
+  Future<void> startListening(String fieldName, TextEditingController textController) async {
+    bool available = await speech.initialize(
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          isListening.value = false;
+          activeFieldForVoice.value = '';
+        }
+      },
+      onError: (error) {
+        isListening.value = false;
+        activeFieldForVoice.value = '';
+      },
+    );
+
+    if (available) {
+      isListening.value = true;
+      activeFieldForVoice.value = fieldName;
+      speech.listen(
+        onResult: (result) {
+          textController.text = result.recognizedWords;
+        },
+        listenFor: const Duration(seconds: 15),
+        localeId: 'en_IN',
+      );
+    } else {
+      Get.snackbar(
+        'Mic Unavailable',
+        'Speech recognition is not available on this device',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void stopListening() {
+    speech.stop();
+    isListening.value = false;
+    activeFieldForVoice.value = '';
   }
 
   Future<void> detectLocation() async {
@@ -82,12 +128,13 @@ class BookVetController extends GetxController {
     }
   }
 
-  Future<void> pickImage() async {
+  Future<void> pickImage(int index) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
     );
     if (result != null && result.files.single.path != null) {
-      imagePath.value = result.files.single.path!;
+      imagePaths[index].value = result.files.single.path!;
+      imagePaths.refresh();
     }
   }
 
@@ -101,10 +148,11 @@ class BookVetController extends GetxController {
       );
       return;
     }
-    if (imagePath.value == null) {
+    final missingImages = imagePaths.where((img) => img.value == null).length;
+    if (missingImages > 0) {
       Get.snackbar(
         'Validation',
-        'Please upload a photo to help the vet',
+        'Please upload all 3 chicken photos',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -125,12 +173,27 @@ class BookVetController extends GetxController {
 
       if (userId == null) throw Exception("User ID not found");
 
-      String imageUrl = "firebase_storage_link_mock";
+      List<String> imageUrls = [];
+      for (int i = 0; i < imagePaths.length; i++) {
+        try {
+          final file = File(imagePaths[i].value!);
+          final ext = file.path.split('.').last;
+          final fileName =
+              '${DateTime.now().millisecondsSinceEpoch}_${userId}_vet_$i.$ext';
+          await supabase.storage.from('chicken_images').upload(fileName, file);
+          final url = supabase.storage
+              .from('chicken_images')
+              .getPublicUrl(fileName);
+          imageUrls.add(url);
+        } catch (e) {
+          print("Vet image $i upload failed: $e");
+          imageUrls.add("upload_failed");
+        }
+      }
 
       final payload = {
         "farmer_id": userId,
-        "vet_id":
-            "auto_assign", // in real world, this could be the specific vet you clicked, or a matchmaking queue
+        "vet_id": "auto_assign",
         "issue_type": selectedIssue.value,
         "description": descriptionController.text,
         "number_of_birds": int.tryParse(birdsController.text) ?? 0,
@@ -140,11 +203,13 @@ class BookVetController extends GetxController {
           "longitude": lng,
           "address": locationController.text,
         },
-        "image_url": imageUrl,
+        "image_url": imageUrls.isNotEmpty ? imageUrls[0] : "",
+        "image_urls": imageUrls,
         "visit_type": visitType.value.toLowerCase(),
         "scheduled_time":
             scheduledDate.value?.toIso8601String() ??
             DateTime.now().toIso8601String(),
+        "payment_mode": paymentMode.value,
         "status": "pending",
       };
 
@@ -177,5 +242,14 @@ class BookVetController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  @override
+  void onClose() {
+    speech.stop();
+    descriptionController.dispose();
+    birdsController.dispose();
+    locationController.dispose();
+    super.onClose();
   }
 }
