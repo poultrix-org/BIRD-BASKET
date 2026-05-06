@@ -166,7 +166,7 @@ class FarmersHomeView extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 _buildHotDemandSection(),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16), // Reduced gap below Hot Demand
                 const MarketTrendGraph(),
                 const SizedBox(height: 80),
               ],
@@ -814,7 +814,12 @@ class _MarketTrendGraphState extends State<MarketTrendGraph> {
                     getTitlesWidget: (value, meta) {
                       if (value % 1 != 0) return const SizedBox(); // Ensure only exact integer dates show up
                       
-                      const days = ['Jan 25', 'Jan 26', 'Jan 27', 'Jan 28', 'Jan 29', 'Jan 30', 'Jan 31'];
+                      final now = DateTime.now();
+                      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                      final days = List.generate(7, (index) {
+                        final d = now.subtract(Duration(days: 6 - index));
+                        return '${months[d.month - 1]} ${d.day}';
+                      });
                       if (value.toInt() >= 0 && value.toInt() < days.length) {
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
