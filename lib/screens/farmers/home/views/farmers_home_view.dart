@@ -743,6 +743,8 @@ class _MarketTrendGraphState extends State<MarketTrendGraph> {
           height: 340, // Increased height for a bigger chart
           padding: const EdgeInsets.fromLTRB(0, 24, 16, 16), // Minimized left padding
           child: LineChart(
+            duration: const Duration(milliseconds: 500), // Smooth transition
+            curve: Curves.easeInOutCubic,
             LineChartData(
               minX: -0.2, // Prevents dots from overlapping Y-axis numbers
               maxX: 6.2,
