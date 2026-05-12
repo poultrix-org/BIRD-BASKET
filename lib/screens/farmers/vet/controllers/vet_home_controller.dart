@@ -29,8 +29,9 @@ class VetHomeController extends GetxController {
     _useFallbackLocation();
     _loadDummyVets(); // Show something instantly
     
-    // 2. Fetch real data from Supabase using fallback location first (optional, but good for speed)
-    fetchNearbyVets();
+    // We remove the automatic fetchNearbyVets() to prevent 
+    // network exceptions from logging the user out in dummy mode.
+    isLoading.value = false;
 
     // 3. Silently fetch actual GPS location in the background
     _fetchRealLocationSilently();
@@ -66,8 +67,8 @@ class VetHomeController extends GetxController {
       farmerLat.value = position.latitude;
       farmerLng.value = position.longitude;
 
-      // 4. Once we have the real location, re-fetch the vets precisely
-      fetchNearbyVets();
+      // 4. Update dummy vets with real location
+      _loadDummyVets();
     } catch (e) {
       print("Error getting background location: $e");
     }

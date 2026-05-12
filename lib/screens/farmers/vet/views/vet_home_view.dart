@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../controllers/vet_home_controller.dart';
 import 'emergency_booking_view.dart';
 import 'vaccination_booking_view.dart';
+import 'vet_bookings_view.dart';
 
 class VetHomeView extends StatelessWidget {
   final VetHomeController controller = Get.put(VetHomeController());
@@ -20,7 +21,7 @@ class VetHomeView extends StatelessWidget {
           'Veterinary Services',
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.w900,
-            fontSize: 22,
+            fontSize: 20,
             color: const Color(0xFF1B5E20),
           ),
         ),
@@ -29,6 +30,33 @@ class VetHomeView extends StatelessWidget {
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Color(0xFF1B5E20)),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Get.to(() => VetBookingsView()),
+            icon: const Icon(Icons.history, color: Color(0xFF1B5E20), size: 16),
+            label: Text(
+              'Bookings',
+              style: GoogleFonts.montserrat(
+                color: const Color(0xFF1B5E20),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2.0),
+          child: Obx(
+            () => controller.isLoading.value
+                ? const LinearProgressIndicator(
+                    color: Color(0xFF1B5E20),
+                    backgroundColor: Colors.transparent,
+                    minHeight: 2,
+                  )
+                : const SizedBox(height: 2),
+          ),
+        ),
       ),
       body: CustomScrollView(
         slivers: [
@@ -221,23 +249,7 @@ class VetHomeView extends StatelessWidget {
             ),
           ),
 
-          // ── Loading indicator only ──
-          Obx(() {
-            if (controller.isLoading.value) {
-              return const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 60),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF1B5E20),
-                      strokeWidth: 2.5,
-                    ),
-                  ),
-                ),
-              );
-            }
-            return const SliverToBoxAdapter(child: SizedBox.shrink());
-          }),
+          // ── Loading indicator moved to AppBar ──
 
           // ── Doctors List ──
           Obx(() {

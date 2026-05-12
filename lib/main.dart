@@ -1,4 +1,5 @@
 import 'package:birdbasket/screens/authentications/auths/controllers/global_auth_controller.dart';
+import 'package:birdbasket/screens/authentications/auths/controllers/network_controller.dart';
 import 'package:birdbasket/screens/authentications/auths/views/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -33,6 +34,7 @@ class HenHutApp extends StatelessWidget {
     const Color textDark = Colors.black87;
 
     Get.put(GlobalAuthController(), permanent: true);
+    Get.put(NetworkController(), permanent: true);
     return GetMaterialApp(
       title: 'HenHut',
       theme: ThemeData(

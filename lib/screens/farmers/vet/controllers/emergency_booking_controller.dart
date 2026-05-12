@@ -186,9 +186,9 @@ class EmergencyBookingController extends GetxController {
           final ext = file.path.split('.').last;
           final fileName =
               '${DateTime.now().millisecondsSinceEpoch}_${userId}_vet_$i.$ext';
-          await supabase.storage.from('chicken_images').upload(fileName, file);
+          await supabase.storage.from('emergencybooking_images').upload(fileName, file);
           final url = supabase.storage
-              .from('chicken_images')
+              .from('emergencybooking_images')
               .getPublicUrl(fileName);
           imageUrls.add(url);
         } catch (e) {
@@ -204,9 +204,9 @@ class EmergencyBookingController extends GetxController {
           final ext = file.path.split('.').last;
           final fileName =
               '${DateTime.now().millisecondsSinceEpoch}_${userId}_audio.$ext';
-          await supabase.storage.from('chicken_images').upload(fileName, file);
+          await supabase.storage.from('emergencybooking_images').upload(fileName, file);
           audioUrl = supabase.storage
-              .from('chicken_images')
+              .from('emergencybooking_images')
               .getPublicUrl(fileName);
         } catch (e) {
           print("Audio upload failed: $e");

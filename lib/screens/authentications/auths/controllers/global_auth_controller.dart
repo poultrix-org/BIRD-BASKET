@@ -70,8 +70,15 @@ class GlobalAuthController extends GetxController {
         );
       }
     } catch (e) {
-      await supabase.auth.signOut();
-      Get.offAll(() => LoginView());
+      print("Global auth check error: $e");
+      // Do not log out on network/temporary errors
+      Get.snackbar(
+        'Connection Error',
+        'Unable to verify your profile at this time. Check your internet connection.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 

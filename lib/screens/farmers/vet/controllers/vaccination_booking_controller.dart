@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../home/controllers/farmers_home_controller.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'vet_bookings_controller.dart';
 class VaccinationBookingController extends GetxController {
   final supabase = Supabase.instance.client;
   final formKey = GlobalKey<FormState>();
@@ -148,6 +149,27 @@ class VaccinationBookingController extends GetxController {
           ? '${preferredTime.value!.hour.toString().padLeft(2, '0')}:${preferredTime.value!.minute.toString().padLeft(2, '0')}'
           : null;
 
+      // ── Upload Images ──
+      List<Future<String?>> uploadTasks = [];
+      for (int i = 0; i < imagePaths.length; i++) {
+        if (imagePaths[i].value != null) {
+          uploadTasks.add((() async {
+            try {
+              final file = File(imagePaths[i].value!);
+              final ext = file.path.split('.').last;
+              final fileName = '${DateTime.now().millisecondsSinceEpoch}_${userId}_vac_$i.$ext';
+              await supabase.storage.from('vacinationbooking_images').upload(fileName, file);
+              return supabase.storage.from('vacinationbooking_images').getPublicUrl(fileName);
+            } catch (e) {
+              print("Vac image $i upload failed: $e");
+              return null;
+            }
+          })());
+        }
+      }
+      final results = await Future.wait(uploadTasks);
+      List<String> imageUrls = results.whereType<String>().toList();
+
       // ── Calculate next due date (3 months from preferred date) ──
       final nextDueDate = preferredDate.value!.add(const Duration(days: 90));
 
@@ -167,6 +189,7 @@ class VaccinationBookingController extends GetxController {
         'reminder_enabled': reminderEnabled.value,
         'notes': notesController.text.trim(),
         'status': 'scheduled',
+        'image_urls': imageUrls,
       };
 
       try {
@@ -188,6 +211,16 @@ class VaccinationBookingController extends GetxController {
         });
       } catch (e) {
         print('VaccinationHistory insert warning: $e');
+      }
+
+      // ── Refresh Bookings History ──
+      try {
+        if (!Get.isRegistered<VetBookingsController>()) {
+          Get.put(VetBookingsController(), permanent: true);
+        }
+        Get.find<VetBookingsController>().fetchBookings();
+      } catch (e) {
+        print('History refresh warning: $e');
       }
 
       isLoading.value = false;
@@ -263,8 +296,8 @@ class VaccinationBookingController extends GetxController {
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
-                    Get.back(); // close dialog
-                    Get.back(); // go back to vet home
+                    // Force dismissing the dialog AND the current screen
+                    Get.close(2);
                   },
                   child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),

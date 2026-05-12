@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -46,12 +47,14 @@ class VaccinationBookingView extends StatelessWidget {
                     _textField(
                       controller: controller.farmNameController,
                       hint: 'e.g. Sri Murugan Farms',
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]'))],
                     ),
                     const SizedBox(height: 16),
                     _fieldLabel('Bird Type'),
                     _textField(
                       controller: controller.birdTypeController,
                       hint: 'e.g. Broiler, Layer, Country Hen',
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]'))],
                     ),
                     const SizedBox(height: 16),
                     _fieldLabel('Total Birds'),
@@ -59,12 +62,15 @@ class VaccinationBookingView extends StatelessWidget {
                       controller: controller.totalBirdsController,
                       hint: 'e.g. 500',
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 16),
-                    _fieldLabel('Bird Age'),
+                    _fieldLabel('Bird Age (in days)'),
                     _textField(
                       controller: controller.birdAgeController,
-                      hint: 'e.g. 21 days, 3 weeks',
+                      hint: 'e.g. 21',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
 
                     _divider(),
@@ -299,10 +305,10 @@ class VaccinationBookingView extends StatelessWidget {
                     Obx(
                       () => SizedBox(
                         width: double.infinity,
+                        height: 56,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: const StadiumBorder(),
                             elevation: 0,
                           ),
@@ -310,8 +316,12 @@ class VaccinationBookingView extends StatelessWidget {
                               ? null
                               : () => controller.submitBooking(),
                           child: controller.isLoading.value
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2)
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
+                                )
                               : Text(
                                   'Schedule Vaccination',
                                   style: GoogleFonts.montserrat(
@@ -369,10 +379,12 @@ class VaccinationBookingView extends StatelessWidget {
     required String hint,
     TextInputType keyboardType = TextInputType.text,
     bool isRequired = true,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       style: GoogleFonts.montserrat(fontSize: 14),
       decoration: _inputDecoration(hint: hint),
       validator: isRequired
