@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../controllers/sell_chicken_controller.dart';
 
 class SellChickenView extends StatelessWidget {
@@ -151,13 +151,102 @@ class SellChickenView extends StatelessWidget {
                 ),
               ],
             ),
-            child: SizedBox(
-              height: 165,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Left image carousel matching exactly the right side height
-                  Builder(
+            child: Stack(
+              children: [
+                // 1. Content Area (determines the dynamic height of the entire card)
+                Container(
+                  constraints: const BoxConstraints(minHeight: 165),
+                  padding: const EdgeInsets.only(left: 140.0), // Space for the image
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Tags
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            _buildBadge(
+                              "🏷️ ${item['status']?.toString().toUpperCase() ?? 'ACTIVE'}",
+                              isSecondary: false,
+                            ),
+                            if (item['accept_negotiation'] == true)
+                              _buildBadge("🤝 Negotiable", isSecondary: true),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+
+                        // Title
+                        Text(
+                          "$birds Birds • $totalQty kg",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E2019), // Deep text
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 6),
+
+                        // Description/Subtitle
+                        Text(
+                          "Available From $date\n$locationStr",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 12),
+
+                        // Price bottom
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              "₹$price",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              "/kg",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "₹${price + 10} /kg", // Mock market average crossed out
+                              style: GoogleFonts.montserrat(
+                                fontSize: 12,
+                                decoration: TextDecoration.lineThrough,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 2. Image Area (stretches dynamically to match the content height)
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  width: 140,
+                  child: Builder(
                     builder: (context) {
                       final List<String> urls = [];
                       if (item['image_urls'] != null && item['image_urls'] is List) {
@@ -174,7 +263,6 @@ class SellChickenView extends StatelessWidget {
 
                       if (urls.isEmpty) {
                         return Container(
-                          width: 140,
                           decoration: BoxDecoration(
                             color: Colors.grey.shade100,
                             borderRadius: const BorderRadius.only(
@@ -198,95 +286,8 @@ class SellChickenView extends StatelessWidget {
                       return _ListTileImageCarousel(urls: urls);
                     },
                   ),
-
-                  // Content area
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(
-                        16.0,
-                      ), // Padding is applied to text ONLY
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Tags
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              _buildBadge(
-                                "🏷️ ${item['status']?.toString().toUpperCase() ?? 'ACTIVE'}",
-                                isSecondary: false,
-                              ),
-                              if (item['accept_negotiation'] == true)
-                                _buildBadge("🤝 Negotiable", isSecondary: true),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-
-                          // Title
-                          Text(
-                            "$birds Birds • $totalQty kg",
-                            style: GoogleFonts.montserrat(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E2019), // Deep text
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 6),
-
-                          // Description/Subtitle
-                          Text(
-                            "Available From $date\n$locationStr",
-                            style: GoogleFonts.montserrat(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                              height: 1.4,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 12),
-
-                          // Price bottom
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                "₹$price",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                "/kg",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                "₹${price + 10} /kg", // Mock market average crossed out
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 12,
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -1179,11 +1180,10 @@ class SellChickenView extends StatelessWidget {
             Obx(
               () => SizedBox(
                 width: double.infinity,
-                height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B5E20),
-
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: const StadiumBorder(),
                   ),
                   onPressed: controller.isLoading.value
@@ -1276,6 +1276,7 @@ class SellChickenView extends StatelessWidget {
                 horizontal: 16,
                 vertical: 16,
               ),
+
               suffixIcon: GestureDetector(
                 onTap: () {
                   if (controller.isListening.value &&

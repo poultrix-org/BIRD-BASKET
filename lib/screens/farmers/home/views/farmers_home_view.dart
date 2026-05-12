@@ -101,32 +101,25 @@ class FarmersHomeView extends StatelessWidget {
   }
 
   Widget _buildHomeContent(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Farm Banner Header & Search Bar Overlay
-          Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.bottomCenter,
-            children: [
-              _buildFarmHeader(context),
-              Positioned(
-                bottom: -30, // Centered on the video edge (half of the 60px height)
-                left: 16,
-                right: 16,
-                child: const AnimatedSearchBar(),
-              ),
-            ],
+    return CustomScrollView(
+      slivers: [
+        // Farm Banner Header & Sticky Search Bar
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _FarmHeaderDelegate(
+            videoWidget: _buildFarmHeader(context),
+            searchWidget: const AnimatedSearchBar(),
+            topPadding: MediaQuery.of(context).padding.top,
           ),
+        ),
 
-          // Content area below header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16), // Reduced top padding to close the gap
+        // Content area below header
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), // Reduced top padding to match old layout
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 // Square Ads Grid
                 GridView.count(
                   crossAxisCount: 2,
@@ -172,8 +165,8 @@ class FarmersHomeView extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -313,13 +306,13 @@ class FarmersHomeView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             title, 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+            style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(
             subtitle, 
-            style: const TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.bold), // Requested green bold text
+            style: GoogleFonts.montserrat(color: Colors.green, fontSize: 13, fontWeight: FontWeight.bold), // Requested green bold text
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -423,7 +416,7 @@ class _AnimatedSearchBarState extends State<AnimatedSearchBar> {
   final TextEditingController _controller = TextEditingController();
   int _currentIndex = 0;
   Timer? _timer;
-  final List<String> _hints = ['feeds', 'vets', 'track', 'orders'];
+  final List<String> _hints = ['Feeds', 'Vets', 'Market', 'Sell', 'Orders'];
 
   @override
   void initState() {
@@ -660,9 +653,9 @@ class _MarketTrendGraphState extends State<MarketTrendGraph> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   side: BorderSide.none,
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                  labelStyle: TextStyle(
-                     color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  labelStyle: GoogleFonts.montserrat(
+                     color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                   ),
                   onSelected: (selected) {
                     if (selected) {
@@ -691,7 +684,7 @@ class _MarketTrendGraphState extends State<MarketTrendGraph> {
                         label: Center(
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: Text(time, style: const TextStyle(fontSize: 13)),
+                            child: Text(time, style: GoogleFonts.montserrat(fontSize: 13)),
                           ),
                         ),
                         selected: isSelected,
@@ -699,11 +692,11 @@ class _MarketTrendGraphState extends State<MarketTrendGraph> {
                         backgroundColor: Colors.white,
                         showCheckmark: false,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey.shade300),
+                        side: BorderSide(color: isSelected ? Colors.transparent : Colors.black),
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        labelStyle: GoogleFonts.montserrat(
+                          color: isSelected ? Colors.white : Colors.black,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                         ),
                         onSelected: (selected) {
                           if (selected) {
@@ -907,4 +900,73 @@ class _MarketTrendGraphState extends State<MarketTrendGraph> {
       ],
     );
   }
+}
+
+class _FarmHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget videoWidget;
+  final Widget searchWidget;
+  final double topPadding;
+
+  _FarmHeaderDelegate({
+    required this.videoWidget,
+    required this.searchWidget,
+    required this.topPadding,
+  });
+
+  @override
+  double get maxExtent => 280.0; 
+
+  @override
+  double get minExtent => topPadding + 76.0;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    double videoTop = -shrinkOffset;
+    
+    // Fade out the video as it scrolls up to avoid seeing it when pinned
+    double progress = shrinkOffset / (maxExtent - minExtent);
+    double opacity = 1.0 - (progress * 1.5);
+    if (opacity < 0) opacity = 0;
+    if (opacity > 1) opacity = 1;
+
+    return Container(
+      // Removed solid color from here
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Dynamic white background that covers the video area and the pinned header area,
+          // but leaves the bottom overhang transparent.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: (250.0 - shrinkOffset).clamp(minExtent, 280.0),
+            child: Container(color: Colors.white),
+          ),
+          // The video
+          Positioned(
+            top: videoTop,
+            left: 0,
+            right: 0,
+            height: 250,
+            child: Opacity(
+              opacity: opacity,
+              child: videoWidget,
+            ),
+          ),
+          
+          // The search bar
+          Positioned(
+            bottom: 0, // Centered perfectly on the video edge (280 maxExtent - 60 height = 220 top. Video ends at 250)
+            left: 16,
+            right: 16,
+            child: searchWidget,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => true;
 }

@@ -170,9 +170,25 @@ class TrackVetView extends StatelessWidget {
                               onPressed: () => controller.callVet(),
                             ),
                             TextButton.icon(
+                              icon: const Icon(Icons.chat, color: Color(0xFF1B5E20)),
+                              label: const Text(
+                                'Chat',
+                                style: TextStyle(
+                                  color: Color(0xFF1B5E20),
+                                ),
+                              ),
+                              onPressed: () {
+                                Get.snackbar(
+                                  'Chat',
+                                  'Opening chat with ${controller.vetName.value}...',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
+                              },
+                            ),
+                            TextButton.icon(
                               icon: const Icon(Icons.cancel, color: Colors.red),
                               label: const Text(
-                                'Cancel Visit',
+                                'Cancel',
                                 style: TextStyle(
                                   color: Colors.red,
                                 ),
